@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 from graph_builder import build_graph
 from graph_node import GraphState
 from langgraph.checkpoint.memory import MemorySaver
 
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.models import ChatRequest, ChatResponse
 
 app = FastAPI()
 
@@ -21,13 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 요청 바디 모델 정의
-class ChatRequest(BaseModel):
-    message: str
 
-# 응답 모델 정의 (선택사항)
-class ChatResponse(BaseModel):
-    reply: dict
 
 memory = MemorySaver()
 workflow = build_graph()
