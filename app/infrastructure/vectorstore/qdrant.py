@@ -6,27 +6,25 @@ import yaml
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 
-class Qdrnat_custom():
+from app.config import yaml_cfg
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class QdrantCustom():
     def __init__(self,
                  host: str = 'localhost',
                  port: int = 6333,
-                 collection_name: str = 'chatbot',
-                 cfg_path: str = "app/config/config.yml",
+                 collection_name: str = 'aihuman',
                  model_type: str = 'openai_gpt',
                  ):
         self.host = host
         self.port = port
+        self.cfg = yaml_cfg
         self.collection_name = collection_name
         self.client = self._client()
-        self.vector_store = self._vector_store()
-        self.cfg = self._get_cfg(cfg_path)
         self.emb_model = self._get_model(model_type)
-
-    def _get_cfg(self, path):
-        with open(path, "r") as f:
-            config = yaml.safe_load(f)
-        
-        return config
+        self.vector_store = self._vector_store()
 
     def _client(self):
         client = QdrantClient(host=self.host, port=self.port)
@@ -53,7 +51,12 @@ class Qdrnat_custom():
         return vector_store
 
     
-    def create_index(self, vector_size:int = 3072):
+    def create_index(self, 
+                    vector_size:int = 3072,
+                    m:int =16,
+                    ef_construct:int=100,
+                    full_scan_threshold:int=1000
+                ):
         if self.client.collection_exists(self.collection_name):
             self.client.delete_collection(self.collection_name)
 
@@ -63,14 +66,17 @@ class Qdrnat_custom():
                 size=vector_size,
                 distance=Distance.COSINE,
                 hnsw_config=HnswConfigDiff(
-                    m=16,                    # 그래프 degree (기본 16)
-                    ef_construct=100,        # 인덱스 구축시 탐색 범위
-                    full_scan_threshold=1000 # 소량 데이터 일때 hnsw보다 faster scan
+                    m=m,                   # 그래프 degree (기본 16)
+                    ef_construct=ef_construct,        # 인덱스 구축시 탐색 범위
+                    full_scan_threshold=full_scan_threshold # 소량 데이터 일때 hnsw보다 faster scan
                 )
             )
         )
 
-    def embedding_text(self, texts: list, metadatas: list):
+    def embedding_text(self, 
+                       texts: list,
+                       metadatas: list
+                    ):
         '''
         texts=[
         "Azure Blob Storage 인증 문제 해결 방법",
