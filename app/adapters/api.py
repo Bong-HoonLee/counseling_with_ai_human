@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from graph_builder import build_graph
-from graph_node import GraphState
+from app.core import Chatbot_node, build_graph, GraphState
 from langgraph.checkpoint.memory import MemorySaver
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +36,6 @@ async def chat_endpoint(chat_request: ChatRequest):
     input = GraphState(question=[("user",  user_message)])
     
     
-    output = compiled_graph.invoke(input)
+    output = await compiled_graph.ainvoke(input)
                 
     return ChatResponse(reply=output)

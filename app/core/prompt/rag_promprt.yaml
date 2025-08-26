@@ -1,0 +1,19 @@
+_type: "prompt"
+template: |
+  You will be given a list of context. Your task is to extract the most relevant context for the user's query.
+
+  Here is the user's query:
+  {question}
+
+  Here is the context:
+  {contexts}
+
+  Your task is to extract the most relevant context for the user's query.
+
+  Remember:
+  - Your response should be only the relevant context for the user's query, nothing else.
+
+  output:
+  - Answer the user query.\n{format_instructions}
+
+input_variables: ["question", "contexts", "format_instructions"]

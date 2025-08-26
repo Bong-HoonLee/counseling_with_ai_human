@@ -1,6 +1,6 @@
 def build_graph():
     from langgraph.graph import START, END, StateGraph
-    from node import GraphState, Chatbot_node, is_retrieve
+    from .node import GraphState, Chatbot_node
     
     workflow = StateGraph(GraphState)
     chatbot_node = Chatbot_node("openai_gpt")
@@ -17,7 +17,7 @@ def build_graph():
     # workflow.add_edge("gpt_relevance_check", END)
     workflow.add_conditional_edges(
         source="retrieve",
-        path=is_retrieve,
+        path=chatbot_node.is_retrieve,
         path_map={"rag": "rag_response", 'conversation': 'conversation_response'},
     )
     

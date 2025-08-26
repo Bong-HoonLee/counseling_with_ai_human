@@ -13,17 +13,15 @@ import yaml
 import os
 from dotenv import load_dotenv
 
-from state import GraphState
+from .state import GraphState
 
 load_dotenv()
 
 
-    
-
 class Chatbot_node():
     def __init__(self, 
                  model_type: str,
-                 cfg_path: str = 'config/config.yml',
+                 cfg_path: str = 'app/core/config/config.yml',
                  search_type: str = 'qdrnat',
                  index: str = 'chatbot',
                  ):
@@ -187,11 +185,11 @@ class Chatbot_node():
         return GraphState(context=documents)
 
 
-# tools
-def is_retrieve(state: GraphState):
-    context = state.get("context", [])
-    
-    if context:
-        return "rag"
-    else:
-        return "conversation"
+    # tools
+    def is_retrieve(state: GraphState):
+        context = state.get("context", [])
+        
+        if context:
+            return "rag"
+        else:
+            return "conversation"
