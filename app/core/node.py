@@ -14,6 +14,7 @@ import os
 from dotenv import load_dotenv
 
 from .state import GraphState
+from app.config import yaml_cfg
 
 load_dotenv()
 
@@ -21,21 +22,22 @@ load_dotenv()
 class Chatbot_node():
     def __init__(self, 
                  model_type: str,
-                 cfg_path: str = 'app/core/config/config.yml',
+                #  cfg_path: str = 'app/config/config.yml',
                  search_type: str = 'qdrnat',
                  index: str = 'chatbot',
                  ):
         # self.model, self.emb_model = self._get_model(model_type, llm_cfg, emb_cfg)
-        self.cfg = self._get_cfg(cfg_path)
+        # self.cfg = self._get_cfg(cfg_path)
+        self.cfg = yaml_cfg
         self.llm_model, self.emb_model = self._get_model(model_type)
         self.search_type = search_type
         self.index = index
         
-    def _get_cfg(self, path):
-        with open(path, "r") as f:
-            config = yaml.safe_load(f)
+    # def _get_cfg(self, path):
+    #     with open(path, "r") as f:
+    #         config = yaml.safe_load(f)
         
-        return config
+    #     return config
     
     def _get_model(self, model_type):
         if model_type == 'Azure_gpt':
