@@ -32,23 +32,18 @@ def main():
         dim
     )
 
-    # 컬렉션 생성 후 데이터 임베딩
 
-    vector_store = qdrant_inst.vector_store
-
-    vector_store.add_texts(
-    texts=[
-        "Azure Blob Storage 인증 문제 해결 방법",
-        "Python S3 파일 업로드 방법",
-        "FastAPI로 REST API 서버 만들기"
-        ],
-    metadatas=[
-        {"source": "azure_docs"},
-        {"source": "aws_docs"},
-        {"source": "fastapi_docs"}
-        ]
-    )
-
+    # 필드 인덱스 생성
+    for f, schema in [
+    ("lang", "keyword"),
+    ("doc_type", "keyword"),
+    ("product", "keyword"),
+    ("region", "keyword"),
+    ("created_at", "integer"),
+    ("tags", "keyword"),
+    ("doc_id", "keyword"),
+    ]:
+        client.create_payload_index(COL, field_name=f, field_schema=schema)
 
 if __name__ == "__main__":
     main()
