@@ -11,7 +11,8 @@ from qdrant_client.http.models import (
     SparseVectorParams, 
     SparseIndexParams,
     PointStruct,
-    SparseVector
+    SparseVector,
+    UpdateResult
 )
 from langchain_qdrant import QdrantVectorStore
 from langchain_qdrant.qdrant import RetrievalMode
@@ -46,6 +47,15 @@ class QdrantCustom():
         self._vs_cache: Dict[Tuple[str, str], QdrantVectorStore] = {} # key = (vector_name, retrieval_mode)
 
         self._emb_cfg = emb_cfg or DualEmbeddingConfig(provider="openai")
+
+    @property
+    def client(self) -> QdrantClient:
+        """
+        Lazy init QdrantClient
+        """
+        if self._client is None:
+            self._client = QdrantClient(host=self.host, port=self.port)
+        return self._client
 
     def get_embedding(self, key: str = "A"):
         if key not in self._embeddings:
@@ -120,7 +130,7 @@ class QdrantCustom():
         sparse_on_disk: bool = False,
     ) -> None:
         """ 
-        컬렉션을 드롭 후 재생성 (데이터 삭제)
+        컬렉션을 드롭 후 재생성 (collection 자체가 삭제되므로 주의 필요)
         """
         vs = vector_size
         q_params = HnswConfigDiff(m=m, ef_construct=ef_construct)
@@ -141,7 +151,14 @@ class QdrantCustom():
             sparse_vectors_config=sparse_cfg,
         )
         
-    def create_payload_index(self, field_name, schema):
+    def create_payload_index(
+            self, 
+            field_name, 
+            schema
+            ) -> UpdateResult:
+        """
+        meta data에서 자주 쓰이는 값들을 필드로 구성하고 싶을 때 사용
+        """
         return self.client.create_payload_index(
             collection_name=self.collection_name,
             field_name=field_name,
@@ -157,7 +174,7 @@ class QdrantCustom():
         ) -> QdrantVectorStore:
         """
         lazy sigletone,
-        init의 _vs_cache에 key값으로 저장을 합니다.
+        init의 _vs_cache(dict)에 key/value로 저장.
         """
 
         if vector_name == "q_vec" and not use_A:
@@ -187,6 +204,10 @@ class QdrantCustom():
         self,
         s: Optional[str]
     ) -> str:
+        """
+        간단하게 불필요한 양 끝단의 띄어쓰기, 줄바꿈 등의 공백만 제거
+        추후 데이터 특성에 의한 전처리 추가 여지 있음
+        """
         if s is None:
             return ""
         return " ".join(str(s).strip().split())
@@ -195,6 +216,9 @@ class QdrantCustom():
         self,
         path: str
     ) -> Tuple[str, str, str]:
+        """
+        세브란스 말뭉치 데이터의 카테고리가 레벨 3으로 구성되어 있어서 각각 매핑
+        """
         parts = (path or "").split("/")
         parts = [p.strip() for p in parts if p is not None]
         lvl1 = parts[0] if len(parts) > 0 else ""
@@ -203,6 +227,10 @@ class QdrantCustom():
         return lvl1, lvl2, lvl3
     
     def _sha1(self, s: str) -> str:
+        """
+        sha256보다 빠르고, 적은 길이로 사용할 수 있어서 적용
+        추후 보안적으로 중요해지거나 필요시 256으로 변경
+        """
         return hashlib.sha1(s.encode("utf-8")).hexdigest()
     
     def _content_hash(
@@ -210,6 +238,9 @@ class QdrantCustom():
         q: str,
         a: str
     ) -> str:
+        """
+        추후 해쉬변경 시 간단하게 교체 가능
+        """
         return self._sha1(q + "|||A|||" + a)
     
     def _make_point_id(
@@ -217,7 +248,9 @@ class QdrantCustom():
             pair_id: str,
             version: int
         ) -> str:
-    # Qdrant에 저장할 최종 키(결정적)
+        """
+        Qdrant에 저장되는 키
+        """
         return self._sha1(f"{pair_id}:{version}")
 
     def build_enriched_df(
@@ -252,7 +285,7 @@ class QdrantCustom():
         df["cat_lvl3"] = split_cols.apply(lambda x: x[2])
 
         # 3) 메타
-        df["domain"] = df["cat_lvl1"]       # 최상위 레벨을 도메인으로
+        df["domain"] = df["cat_lvl1"]  # 최상위 레벨을 도메인으로 저장
         df["lang"] = lang
         df["source"] = source_label
 
@@ -262,10 +295,12 @@ class QdrantCustom():
         df["retry_count"] = 0
 
         # 5) ID / 버전 / 해시 / point_id
-        # pair_id: 초기는 행번호 기반으로 간단히(원하면 외부키로 대체 가능)
+        # pair_id: 내가 관리하는 키, DB저장으로 관리
         df["pair_id"] = [
             f"{pair_id_prefix}-{i:08d}" for i in range(len(df))
         ]
+
+        # 버전관리를 통한 데이터 관리
         df["version"] = int(start_version)
 
         df["content_hash"] = [
@@ -286,10 +321,14 @@ class QdrantCustom():
         q_sparse: Optional[dict]
     ) -> Optional[SparseVector]:
         """
+
         허용 입력:
           1) {"indices":[int,...], "values":[float,...]}  # Qdrant 표준
           2) {"token": weight, ...}  # 토큰->가중치 맵 (정렬 후 인덱스로 변환 필요 시 사용)
         반환: qdrant_client.http.models.SparseVector | None
+
+
+        BM25사용한다면 필수일듯, 아직 Vocab을 갖고 있지 않아서 SPLADE 한국어 모델을 생각중
         """
         if not q_sparse:
             return None

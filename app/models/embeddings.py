@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from app.models.types import Provider
 
 
-
 @dataclass
 class DualEmbeddingConfig:
     """
