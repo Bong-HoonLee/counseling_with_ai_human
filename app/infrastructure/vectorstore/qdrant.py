@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import hashlib, uuid
 from typing import Literal, Optional, Iterable, Callable, List, Dict, Any, Tuple
 
 from qdrant_client import QdrantClient
@@ -24,6 +22,7 @@ import pandas as pd
 
 from app.config import yaml_cfg
 from app.models import DualEmbeddingConfig
+from app.core.utils import HashStrategy, SHA1Strategy, SHA256Strategy, point_id, content_hash
 
 load_dotenv()
 
@@ -225,33 +224,6 @@ class QdrantCustom():
         lvl2 = parts[1] if len(parts) > 1 else ""
         lvl3 = parts[2] if len(parts) > 2 else ""
         return lvl1, lvl2, lvl3
-    
-    def _sha1(self, s: str) -> str:
-        """
-        sha256보다 빠르고, 적은 길이로 사용할 수 있어서 적용
-        추후 보안적으로 중요해지거나 필요시 256으로 변경
-        """
-        return hashlib.sha1(s.encode("utf-8")).hexdigest()
-    
-    def _content_hash(
-        self,
-        q: str,
-        a: str
-    ) -> str:
-        """
-        추후 해쉬변경 시 간단하게 교체 가능
-        """
-        return self._sha1(q + "|||A|||" + a)
-    
-    def _make_point_id(
-            self,
-            pair_id: str,
-            version: int
-        ) -> str:
-        """
-        Qdrant에 저장되는 키
-        """
-        return self._sha1(f"{pair_id}:{version}")
 
     def build_enriched_df(
         self,
