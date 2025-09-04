@@ -6,7 +6,7 @@ from typing import Dict, List, Iterable, Optional, Tuple
 from collections import Counter
 
 from app.core.ports.tokenizer import Tokenizer
-from app.core.utils import HashStrategy, SHA1Strategy, SHA256Strategy, point_id, content_hash
+from app.core.utils import HashStrategy, point_id, content_hash
 
 # 스냅샷 메타 정보
 @dataclass(frozen=True)
@@ -22,16 +22,7 @@ class VocabMeta:
     avgdl: float                   # 평균 토큰 길이
     created_at: str                # ISO UTC
 
-# 유틸
-def _sha1(s: str) -> str:
-    return hashlib.sha1(s.encode("utf-8")).hexdigest()
 
-def _hash_stopwords(stopwords: Iterable[str]) -> str:
-    return _sha1("\n".join(sorted(set(stopwords))))
-
-# ------------------------------------------------------------
-# VocabManager: 전역 vocab/DF/N/avgdl 저장·로딩·인코딩
-# ------------------------------------------------------------
 class VocabManager:
     """
     전역 vocab/통계 스냅샷을 관리하고, 텍스트/토큰을 ID 시퀀스로 변환하는 클래스.
@@ -56,23 +47,24 @@ class VocabManager:
         self.avgdl = float(avgdl)
         self.meta = meta
 
-    # -------------------- 빌드(스냅샷 생성) --------------------
+    
     @classmethod
     def build_from_texts(
         cls,
         texts: Iterable[str],
         tokenizer: Tokenizer,
+        hasher: HashStrategy,
         *,
         version: str = "v1",
         tokenizer_name: str = "Okt",
-        stem: bool = True,                 # 메타 기록용(실제 토큰화 정책은 tokenizer가 가짐)
+        stem: bool = True,                 # 메타 기록용(실제 정책은 tokenizer가 가짐)
         drop_pos: Iterable[str] = (),
         stopwords: Iterable[str] = (),
         min_df: int = 2,
         max_vocab: int = 200_000,
     ) -> "VocabManager":
         """
-        원문 텍스트들을 토큰화하여 DF/N/avgdl을 계산하고, min_df/상위 max_vocab 기준으로 vocab을 생성.
+        VocabManager 인스턴스 생성 메서드
         """
         df_counter = Counter()
         lengths = []
@@ -97,12 +89,14 @@ class VocabManager:
         vocab: Dict[str, int] = {tok: i for i, (tok, _) in enumerate(items)}
         df_out: Dict[str, int] = {tok: df for tok, df in items}
 
+        stopwords_hash = hasher.hexdigest("\n".join(sorted(set(stopwords))))
+
         meta = VocabMeta(
             version=version,
             tokenizer=tokenizer_name,
             stem=bool(stem),
             drop_pos=list(drop_pos),
-            stopwords_hash=_hash_stopwords(stopwords),
+            stopwords_hash=stopwords_hash,
             min_df=min_df,
             max_vocab=max_vocab if max_vocab is not None else -1,
             num_docs=N,
@@ -134,7 +128,12 @@ class VocabManager:
             json.dump(asdict(meta_obj), f, ensure_ascii=False, indent=2)
 
     @classmethod
-    def load(cls, snapshot_dir: str) -> "VocabManager":
+    def load(cls, 
+            snapshot_dir: str
+            ) -> "VocabManager":
+        """
+        저장된 스냅샷 json파일로 VocabManager 인스턴스 생성
+        """
         with open(os.path.join(snapshot_dir, "vocab.json"), "r", encoding="utf-8") as f:
             vocab = json.load(f)
         with open(os.path.join(snapshot_dir, "df_counter.json"), "r", encoding="utf-8") as f:
