@@ -1,0 +1,6 @@
+from typing import Protocol, List
+from app.models import SparseVectorTypes
+
+class SparseVector(Protocol):
+    def encode(self, text: str) -> SparseVectorTypes: ...
+    def batch_encode(self, texts: list[str]) -> list[SparseVectorTypes]: ...

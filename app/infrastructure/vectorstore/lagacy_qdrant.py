@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Literal, Optional, Iterable, Callable, List, Dict, Any, Tuple
 
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import (
     Distance, 
     VectorParams, 
@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 import pandas as pd
 
 from app.config import yaml_cfg
-from app.models import DualEmbeddingConfig
+from app.models import EmbeddingConfig
 from app.core.utils import HashStrategy, SHA1Strategy, SHA256Strategy, point_id, content_hash
 
 load_dotenv()
@@ -29,10 +29,10 @@ load_dotenv()
 class QdrantCustom():
     def __init__(
             self,
-            host: str = 'localhost',
-            port: int = 6333,
+            host: str = None,
+            port: int = None,
             collection_name: str = 'aihuman',
-            emb_cfg: Optional[DualEmbeddingConfig] = None,
+            emb_cfg: Optional[EmbeddingConfig] = None,
             use_sparse: bool = False,
         )-> None:
         self.host = host
@@ -45,7 +45,7 @@ class QdrantCustom():
         self._embeddings: Dict[str, Any] = {}
         self._vs_cache: Dict[Tuple[str, str], QdrantVectorStore] = {} # key = (vector_name, retrieval_mode)
 
-        self._emb_cfg = emb_cfg or DualEmbeddingConfig(provider="openai")
+        self._emb_cfg = emb_cfg
 
     @property
     def client(self) -> QdrantClient:
@@ -53,26 +53,21 @@ class QdrantCustom():
         Lazy init QdrantClient
         """
         if self._client is None:
-            self._client = QdrantClient(host=self.host, port=self.port)
+            if self.host and self.port:
+                self._client = QdrantClient(host=self.host, port=self.port)
+            else:
+                self._client = QdrantClient(":memory:")
         return self._client
 
-    def get_embedding(self, key: str = "A"):
-        if key not in self._embeddings:
-            if key == "A":
-                kwargs = self._emb_cfg.a_kwargs
-            elif key == "B":
-                kwargs = self._emb_cfg.b_kwargs or self._emb_cfg.a_kwargs
-            else:
-                raise ValueError(f"Unknown embedding key: {key}")
-
-            if self._emb_cfg.provider == "azure":
-                if not kwargs:
-                    raise ValueError(f"Azure {key}-embedding kwargs가 필요합니다.")
-                self._embeddings[key] = AzureOpenAIEmbeddings(**kwargs)
-            else:
-                if not kwargs:
-                    raise ValueError(f"OpenAI {key}-embedding kwargs가 필요합니다.")
-                self._embeddings[key] = OpenAIEmbeddings(**kwargs)
+    def get_embedding(self):
+        if self._emb_cfg.provider == "azure":
+            if not self._emb_cfg.kwargs:
+                raise ValueError(f"Azure embedding kwargs가 필요합니다.")
+            self._embeddings = AzureOpenAIEmbeddings(**kwargs)
+        else:
+            if not kwargs:
+                raise ValueError(f"OpenAI {key}-embedding kwargs가 필요합니다.")
+            self._embeddings[key] = OpenAIEmbeddings(**kwargs)
 
         return self._embeddings[key]
 

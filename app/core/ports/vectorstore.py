@@ -1,0 +1,6 @@
+from typing import Iterable, List, Protocol
+from app.models import PointUpsert, SearchQuery
+
+class VectorStorePort(Protocol):
+    def upsert(self, points: Iterable[PointUpsert]) -> None: ...
+    def search(self, query: SearchQuery): ...
