@@ -1,9 +1,11 @@
 from qdrant_client import QdrantClient
 
-def make_qdrant_client(
-    host: str, port: int, api_key: str | None = None, prefer_grpc: bool = True, timeout: float = 10.0
+from app.models import QdrantConfig
+
+def qdrant_client(
+    config: QdrantConfig
 ) -> QdrantClient:
-    return QdrantClient(host=host, port=port, api_key=api_key, grpc=prefer_grpc, timeout=timeout)
+    return QdrantClient(":memory:") if not config.in_memory else QdrantClient(host=config.host, port=config.port, api_key=config.api_key, grpc=config.prefer_grpc, timeout=config.timeout)
 
 def health_check(client: QdrantClient) -> bool:
     try:
