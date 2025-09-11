@@ -6,7 +6,7 @@ try:
 except Exception:
     Okt = None
 
-class OktTokenizer():
+class OktTokenizer:
     """
     OKT 토크나이저.
     - 표제어화(stem), 정규화(norm), POS 필터링, 불용어 제거

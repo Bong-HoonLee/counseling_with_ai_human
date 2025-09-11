@@ -1,5 +1,5 @@
 from typing import Protocol, List
-from app.models import SparseVectorTypes
+from app.core.models import SparseVectorTypes
 
 class SparseVector(Protocol):
     def encode(self, text: str) -> SparseVectorTypes: ...

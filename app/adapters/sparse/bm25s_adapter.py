@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from bm25s import BM25
 
 from app.core.ports.tokenizer import Tokenizer
-from app.models.sparse_dto import SparseVectorTypes
+from app.core.models.sparse_dto import SparseVectorTypes
 
 @dataclass(frozen=True)
 class BM25Params:
