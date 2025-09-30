@@ -5,28 +5,41 @@ from qdrant_client import QdrantClient
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.documents import Document
 
-from app.core.models import PointUpsert, SearchQuery, VSConfig, VSClintConfig
 
-from .client import make_qdrant_client, health_check
+from app.core.models import PointUpsert, SearchQuery
+from .client import MakeQdrantClient
+
+from config.config import QdrantVSClint
 
 
 class LangchainQdrant:
     def __init__(
             self,
-            client_cfg: VSClintConfig,
-            vs_cfg: VSConfig,
+            vs_cfg: QdrantVSClint,
             ):
-        self.client_cfg = client_cfg
         self.vs_cfg = vs_cfg
         self._client: Optional[QdrantClient] = None
         self._vs: Optional[QdrantVectorStore] = None
 
     def _ensure_client(self) -> QdrantClient:
         if self._client is None:
-            self._client = make_qdrant_client(self.client_cfg)
+            self._client = MakeQdrantClient.make_qdrant_client(self.vs_cfg)
         return self._client
     
     def _ensure_vs(self) -> QdrantVectorStore:
+        """Initialize a new instance of `QdrantVectorStore`.
+
+        Example:
+            .. code-block:: python
+            qdrant = Qdrant(
+                client=client,
+                collection_name="my-collection",
+                embedding=OpenAIEmbeddings(),
+                retrieval_mode=RetrievalMode.HYBRID,
+                sparse_embedding=FastEmbedSparse(),
+            )
+
+        """
         if self._vs is None:
             self._vs = QdrantVectorStore(
                 client=self._ensure_client(),

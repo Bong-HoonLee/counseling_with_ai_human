@@ -1,3 +1,1 @@
-from .settings import load_yaml
-
-yaml_cfg = load_yaml()
+from .config import QdrantClintConfig, QdrantVSConfig

@@ -3,26 +3,27 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from qdrant_client.models import PointStruct, NamedSparseVector
 from qdrant_client import QdrantClient
 
-from app.core.models import PointUpsert, SearchQuery
-from app.core.models import VSConfig
+from app.core.models import VSClint, PointUpsert, SearchQuery
 
-from app.core.ports import VectorStorePort, SparseVector
+from app.core.ports import VectorStorePort
 from app.core.models import SparseVectorTypes
 
-from .client import make_qdrant_client, health_check
+from .client import MakeQdrantClient
+
+from config.config import QdrantVSClint
 
 
 class QdrantRepository:
     def __init__(
             self,
-            vs_config: VSConfig,
+            vs_config: QdrantVSClint,
             ):
         self.vs_config = vs_config
         self._client: Optional[QdrantClient] = None
     
     def _ensure_client(self) -> QdrantClient:
         if self._client is None:
-            self._client = make_qdrant_client(self.vs_config)
+            self._client = MakeQdrantClient.make_qdrant_client(self.vs_config)
         return self._client
 
     # def upsert(self, PointStruct: PointStruct) -> None:

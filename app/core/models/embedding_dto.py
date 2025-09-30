@@ -1,14 +1,14 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Literal
 
-from app.core.models.types import emb_provider
+from app.core.models.types import model_provider
 
 @dataclass
 class EmbeddingConfig:
     """
     임베딩 config
     """
-    provider: Optional[emb_provider] = None
+    provider: Optional[model_provider] = None
     kwargs: Optional[dict] = None
 
 @dataclass

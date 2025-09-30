@@ -1,8 +1,7 @@
 from typing import Optional
 
-import yaml
-import os
 from dotenv import load_dotenv
+load_dotenv()
 
 from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -13,72 +12,33 @@ from langchain_core.messages import (
     AIMessage,
     HumanMessage,
 )
-from qdrant_client import QdrantClient
 from langchain.chat_models import init_chat_model
-from langchain_qdrant import QdrantVectorStore
-from langchain_core.language_models import (
-    BaseChatModel
-)
+from langchain_core.language_models.base import LanguageModelLike
 
+from .parser import RagOutput, ConvOutput
 from .state import GraphState
-from app.config import yaml_cfg
 
-load_dotenv()
+from app.core.ports import VectorStorePort
+from app.core.models import SearchQuery
 
 
-class Chatbot_node():
-    def __init__(self, 
-                 model_type: str,
-                #  cfg_path: str = 'app/config/config.yml',
-                 search_type: str = 'qdrnat',
-                 index: str = 'chatbot',
+class ChatbotNode:
+    def __init__(self,
+                 llm: LanguageModelLike,
+                 retriever: VectorStorePort,
+                 search_cfg: SearchQuery
                  ):
-        # self.model, self.emb_model = self._get_model(model_type, llm_cfg, emb_cfg)
-        # self.cfg = self._get_cfg(cfg_path)
-        self.cfg = yaml_cfg
-        self.llm_model = Optional[BaseChatModel] = None
-        self.emb_model = self._get_model(model_type)
-        self.search_type = search_type
-        self.index = index
-        
-    # def _get_cfg(self, path):
-    #     with open(path, "r") as f:
-    #         config = yaml.safe_load(f)
-        
-    #     return config
-    
-    # def _get_llm_model(self)-> BaseChatModel:
-        
+        self.llm_model = llm
+        self.retriever = retriever
+        self.search_cfg = search_cfg
 
-    def _get_model(self, model_type):
-        if model_type == 'Azure_gpt':
-            llm_cfg = self.cfg['aoai']['llm_model']
-            emb_cfg = self.cfg['aoai']['emb_model']
-            llm_model = AzureChatOpenAI(**llm_cfg)
-            emb_model = AzureOpenAIEmbeddings(**emb_cfg)
-            
-        elif model_type == 'openai_gpt':
-            llm_cfg = self.cfg['open_ai']['llm_model']
-            emb_cfg = self.cfg['open_ai']['emb_model']
-            llm_model = ChatOpenAI(
-                **llm_cfg
-            )
-            emb_model = OpenAIEmbeddings(**emb_cfg)
-
-        return llm_model, emb_model
-
-    def _load_prompt(self, prompt_path, prompt_type):
+    def _load_prompt(self, prompt_path):
         from langchain_core.prompts import load_prompt
-        from parser import RagOutput, ConvOutput
+        
         prompt = load_prompt(prompt_path)
         
-        if prompt_type == 'rag':
-            parser = JsonOutputParser(pydantic_object=RagOutput)
-            prompt = prompt.partial(format_instructions=parser.get_format_instructions())
-
         elif prompt_type == 'conversation':
-            parser = JsonOutputParser(pydantic_object=ConvOutput)
-            prompt = prompt.partial(format_instructions=parser.get_format_instructions())
+            
 
         elif prompt_type == 'rewrite':
             pass
@@ -86,27 +46,21 @@ class Chatbot_node():
         return prompt
 
     def retrieve(self, state: GraphState) -> GraphState:
-        if self.search_type == 'qdrnat':
-            retrieve_cfg = self.cfg['retriever']['qdrant']
-            host, port = retrieve_cfg.get('host'), retrieve_cfg.get('port')
-            search_cfg = retrieve_cfg.get('search_cfg')
-            user_query = state['question'][-1][-1]
-            # retrieve: 검색
-            client = QdrantClient(host=host, port=port)
-            vector_store = QdrantVectorStore(client=client, collection_name=self.index, embedding=self.emb_model)
-            docs = vector_store.similarity_search_with_score(user_query, **search_cfg)
+        self.search_cfg.query = state['question'][-1][-1]
+        # retrieve: 검색
+        docs = self.retriever.search(self.search_cfg)
 
-            # 임시코드
-            if docs:
-                '''
-                고려할 사항 :
-                1. 리랭커등을 해서 상위 3개정도를 집어낼건데 전부 통합할 때 컨텍스트 길이 모델에 넣을 수 있는지 만약에 넘치면 요약하는 분기를 타야되는지 고려
-                2. 테스트 모드에서는 어떤 출처가 뽑혔는지 나타내야 되기 때문에 state에 기록 남기기(문서 이름, 스코어)
-                3. 벡터DB 고도화하기 필드단으로 디테일한 세팅값, 검색 알고리즘, 리랭커, 벡터 양자화 등
-                '''
-                documents = [docs[0][0].page_content]
-            else:
-                documents = []
+        # 임시코드
+        if docs:
+            '''
+            고려할 사항 :
+            1. 리랭커등을 해서 상위 3개정도를 집어낼건데 전부 통합할 때 컨텍스트 길이 모델에 넣을 수 있는지 만약에 넘치면 요약하는 분기를 타야되는지 고려
+            2. 테스트 모드에서는 어떤 출처가 뽑혔는지 나타내야 되기 때문에 state에 기록 남기기(문서 이름, 스코어)
+            3. 벡터DB 고도화하기 필드단으로 디테일한 세팅값, 검색 알고리즘, 리랭커, 벡터 양자화 등
+            '''
+            documents = [docs[0][0].page_content]
+        else:
+            documents = []
             
         return GraphState(context=documents)
 
@@ -136,8 +90,11 @@ class Chatbot_node():
         
         prompt_path = self.cfg.get('prompt').get('rag_prompt_path')
 
-        prompt_type = 'rag'
-        prompt = self._load_prompt(prompt_path, prompt_type)
+        prompt = self._load_prompt(prompt_path)
+
+        parser = JsonOutputParser(pydantic_object=RagOutput)
+        prompt = prompt.partial(format_instructions=parser.get_format_instructions())
+
         chain = (
             prompt
             | self.llm_model
@@ -162,8 +119,11 @@ class Chatbot_node():
         
         prompt_path = self.cfg.get('prompt').get('conv_prompt_path')
 
-        prompt_type = 'conversation'
-        prompt = self._load_prompt(prompt_path, prompt_type)
+
+        prompt = self._load_prompt(prompt_path)
+        parser = JsonOutputParser(pydantic_object=ConvOutput)
+        prompt = prompt.partial(format_instructions=parser.get_format_instructions())
+
         chain = (
             prompt
             | self.llm_model
