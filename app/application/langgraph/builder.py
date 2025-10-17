@@ -1,9 +1,9 @@
 def build_graph():
     from langgraph.graph import START, END, StateGraph
-    from .node import GraphState, Chatbot_node
+    from .node import GraphState, ChatbotNode
     
     workflow = StateGraph(GraphState)
-    chatbot_node = Chatbot_node("openai_gpt")
+    chatbot_node = ChatbotNode("openai_gpt")
 
     # add node
     workflow.add_node("retrieve", chatbot_node.retrieve)

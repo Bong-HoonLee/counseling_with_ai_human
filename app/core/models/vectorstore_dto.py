@@ -2,11 +2,22 @@ from typing import Literal, Optional, Dict, List, Any, Tuple
 from dataclasses import dataclass, field
 
 @dataclass
+class VSClientConn:
+    host: Optional[str] = None
+    port: Optional[int] = None
+    api_key: Optional[str] = None
+    timeout: Optional[float] = None
+    
+
+@dataclass
 class PointUpsert:
     id: Optional[str] = None
-    dense: Dict[str, List[float]]           # {"q_vec": [...], "a_vec": [...]}
-    sparse: Optional[Tuple[List[int], List[float]]] = None
+    # dense: Dict[str, List[float]]           # {"q_vec": [...], "a_vec": [...]}
+    # sparse: Optional[Tuple[List[int], List[float]]] = None
     payload: Optional[Dict[str, Any]] = None
+    '''
+    payload must contains content
+    '''
 
 
 @dataclass

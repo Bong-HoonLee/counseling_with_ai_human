@@ -2,28 +2,29 @@ from typing import Iterable, List, Protocol, Optional
 from uuid import uuid4
 
 from qdrant_client import QdrantClient
-from langchain_qdrant import QdrantVectorStore
+from langchain_qdrant import QdrantVectorStore, FastEmbedSparse
 from langchain_core.documents import Document
 
-
-from app.core.models import PointUpsert, SearchQuery
 from .client import MakeQdrantClient
 
-from config.config import QdrantVSClint
+from app.core.models import PointUpsert, SearchQuery
+from app.config.config import QdrantClintConfig, QdrantVsConfig
 
 
-class LangchainQdrant:
+class Qdrant:
     def __init__(
             self,
-            vs_cfg: QdrantVSClint,
+            client_cfg: QdrantClintConfig,
+            vs_cfg: QdrantVsConfig,
             ):
+        self.client_cfg = client_cfg
         self.vs_cfg = vs_cfg
         self._client: Optional[QdrantClient] = None
         self._vs: Optional[QdrantVectorStore] = None
 
     def _ensure_client(self) -> QdrantClient:
         if self._client is None:
-            self._client = MakeQdrantClient.make_qdrant_client(self.vs_cfg)
+            self._client = MakeQdrantClient.make_qdrant_client(self.client_cfg)
         return self._client
     
     def _ensure_vs(self) -> QdrantVectorStore:
@@ -49,23 +50,6 @@ class LangchainQdrant:
                 sparse_embedding=self.vs_cfg.sparse_embedding
             )
         return self._vs
-    
-
-    def upsert(self, points: Iterable[PointUpsert]) -> None:
-        vector_store = self._ensure_vs()
-
-        documents = []
-        ids = []
-
-        for point in points:
-            id = str(uuid4()) if point.id is None else point.id
-            content = point.payload.pop('content', None)
-
-            document = Document(page_content=content, metadata=point.payload)
-            documents.append(document)
-            ids.append(id)
-        
-        vector_store.add_documents(documents=documents, ids=ids)
 
     def search(self, query: SearchQuery) -> list[tuple[Document, float]]:
         '''

@@ -12,7 +12,7 @@ from langchain_core.messages import (
     AIMessage,
     HumanMessage,
 )
-from langchain.chat_models import init_chat_model
+
 from langchain_core.language_models.base import LanguageModelLike
 
 from .parser import RagOutput, ConvOutput
@@ -26,22 +26,15 @@ class ChatbotNode:
     def __init__(self,
                  llm: LanguageModelLike,
                  retriever: VectorStorePort,
-                 search_cfg: SearchQuery
+                 search_cfg: SearchQuery,
                  ):
         self.llm_model = llm
         self.retriever = retriever
         self.search_cfg = search_cfg
 
     def _load_prompt(self, prompt_path):
-        from langchain_core.prompts import load_prompt
-        
+        from langchain_core.prompts import load_prompt    
         prompt = load_prompt(prompt_path)
-        
-        elif prompt_type == 'conversation':
-            
-
-        elif prompt_type == 'rewrite':
-            pass
         
         return prompt
 
@@ -61,15 +54,14 @@ class ChatbotNode:
             documents = [docs[0][0].page_content]
         else:
             documents = []
-            
-        return GraphState(context=documents)
+
+        return {'context': documents}
 
 
     def rewrite_query(self, state: GraphState) -> GraphState:
         prompt_path = self.cfg.get('prompt').get('query_rewrite')
-        prompt_type = 'rewrite'
 
-        prompt = self._load_prompt(prompt_path, prompt_type)
+        prompt = self._load_prompt(prompt_path)
 
         chain = (
             prompt
@@ -83,7 +75,7 @@ class ChatbotNode:
             }
         )
 
-        return GraphState(question=query_rewrite)
+        return {'question': query_rewrite}
 
 
     def rag_response(self, state: GraphState) -> GraphState:
@@ -113,7 +105,7 @@ class ChatbotNode:
         # answer = response['answer'][0]['Answer']
         answer = response['Answer']
 
-        return GraphState(answer=[answer])
+        return {'answer': [answer]}
 
     def conversation_response(self, state: GraphState) -> GraphState:
         
@@ -138,16 +130,20 @@ class ChatbotNode:
         
         answer = response['Answer']
 
-        return GraphState(answer=[answer])
+        return {'answer': [answer]}
     
     def summerize(self, state: GraphState) -> GraphState:
         answer_summerize = ''
-        return GraphState(answer=answer_summerize)
+
+        return {'answer': [answer_summerize]}
+
 
     def relevance_check(self, state: GraphState) -> GraphState:
         # Relevance Check: 관련성 확인
         binary_score = "Relevance Score"
-        return GraphState(binary_score=binary_score)
+
+        return {'binary_score': binary_score}
+
 
 
     def search_on_web(self, state: GraphState) -> GraphState:
@@ -155,7 +151,8 @@ class ChatbotNode:
         documents = state["context"] = "기존 문서"
         searched_documents = "검색된 문서"
         documents += searched_documents
-        return GraphState(context=documents)
+
+        return {'context': documents}
 
 
     # tools

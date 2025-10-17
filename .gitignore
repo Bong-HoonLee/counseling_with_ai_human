@@ -6,6 +6,7 @@
 test.py
 TODO.md
 tests/*
+qdrant_data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

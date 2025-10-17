@@ -1,49 +1,44 @@
-from app.infrastructure.vectorstore.qdrant import QdrantCustom
 import argparse
 import os
 
+from app.adapters.vectorstore.qdrant.collection import Qdrant
+from app.config import QdrantClintConfig, QdrantSchema, QdrantVsConfig
 
-def main():
-    parser = argparse.ArgumentParser(description="Create Qdrant collection (dense).")
-    parser.add_argument("--host", default=os.getenv("QDRANT_HOST", "localhost"))
-    parser.add_argument("--port", default=os.getenv("QDRANT_PORT", 6333))
-    parser.add_argument("--collection", default=os.getenv("QDRANT_COLLECTION", "aihuman"))
-    parser.add_argument("--dim", type=int, default=3072)
-    parser.add_argument("--drop-if-exists", action="store_true",
-                        help="컬렉션이 이미 있으면 삭제 후 재생성")
-    parser.add_argument("--emb", default=os.getenv("OPENAI_EMBED_MODEL", "openai_gpt"),
-                        help="예: text-embedding-3-small, 지정 시 차원 자동 감지 시도")
+def main(
+    client_cfg: QdrantClintConfig,
+    vs_cfg: QdrantVsConfig,
+    schema: QdrantSchema,
+    ) -> None:
 
-    args = parser.parse_args()
-
-    host = args.host
-    port = args.port
-    collection_name = args.collection
-    dim = args.dim
-    model_type = args.emb
-
-    qdrant_inst = QdrantCustom(
-        host,
-        port,
-        collection_name,
-        model_type
+    # get qdrant client
+    qdrant_inst = Qdrant(
+        client_cfg=client_cfg,
+        vs_cfg=vs_cfg,
+        schema=schema
     )
-    qdrant_inst.create_index(
-        dim
-    )
+    qdrant_inst.create_index()
+
+    return None
 
 
-    # 필드 인덱스 생성
-    for f, schema in [
-    ("lang", "keyword"),
-    ("doc_type", "keyword"),
-    ("product", "keyword"),
-    ("region", "keyword"),
-    ("created_at", "integer"),
-    ("tags", "keyword"),
-    ("doc_id", "keyword"),
-    ]:
-        client.create_payload_index(COL, field_name=f, field_schema=schema)
+parser = argparse.ArgumentParser(description="Create Qdrant collection")
+parser.add_argument("--host", type=str, default=None)
+parser.add_argument("--port", type=int, default=None)
+parser.add_argument("--timeout", type=int, default=None)
+parser.add_argument("--collection", type=str, default=None)
+
+args = parser.parse_args()
 
 if __name__ == "__main__":
-    main()
+
+    client_cfg = QdrantClintConfig.default()
+    schema = QdrantSchema()
+    vs_cfg = QdrantVsConfig.default()
+
+    client_cfg.host = args.host if args.host is not None else client_cfg.host
+    client_cfg.port = int(args.port) if args.port is not None else client_cfg.port
+    timeout = int(args.timeout) if args.timeout is not None else client_cfg.timeout
+    schema.collection_name = args.collection if args.collection is not None else schema.collection_name
+    schema.vectors_config = schema.vectors_config
+
+    main(client_cfg, vs_cfg, schema)
