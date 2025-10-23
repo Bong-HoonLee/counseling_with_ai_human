@@ -9,15 +9,16 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant.qdrant import RetrievalMode
 from langchain_qdrant.fastembed_sparse import FastEmbedSparse
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings
-from qdrant_client.http.models import Distance, VectorParams
-from qdrant_client.http.models import HnswConfigDiff
+from qdrant_client import models
+from qdrant_client.http.models import HnswConfigDiff, Distance, VectorParams
 
 from app.core.models import VSClientConn
 
 @dataclass
 class QdrantSchema:
     collection_name: str = "default"
-    vectors_config=VectorParams(
+    vectors_config={
+        "dense": VectorParams(
         size=3072,
         distance=Distance.COSINE,
         hnsw_config=HnswConfigDiff(
@@ -26,6 +27,10 @@ class QdrantSchema:
             full_scan_threshold=1000 # 소량 데이터 일때 hnsw보다 faster scan
             )
         )
+        }
+    sparse_vectors_config = {
+        "sparse": models.SparseVectorParams(index=models.SparseIndexParams(on_disk=True))
+    }
 
 @dataclass
 class QdrantClintConfig(VSClientConn):
@@ -36,7 +41,7 @@ class QdrantClintConfig(VSClientConn):
     def default(cls) -> "QdrantClintConfig":
         return cls(
             host="localhost",
-            port=6333,
+            port=6334,
             timeout=10,
         )
 
@@ -56,9 +61,13 @@ class QdrantVsConfig:
     embedding: OpenAIEmbeddings = field(default_factory=OpenAIEmbeddings)
     retrieval_mode: Optional[RetrievalMode] = None
     sparse_embedding: Optional[SparseEmbeddings] = None
+    vector_name = "dense"
+    sparse_vector_name= "sparse"
     @classmethod
     def default(cls) -> "QdrantVsConfig":
         return cls(
+            embedding= OpenAIEmbeddings(
+                    model="text-embedding-3-large"),
             retrieval_mode= RetrievalMode.HYBRID,
             sparse_embedding=FastEmbedSparse(),
         )

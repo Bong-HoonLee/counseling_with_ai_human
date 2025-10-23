@@ -47,7 +47,9 @@ class Qdrant:
                 collection_name=self.vs_cfg.collection_name,
                 embedding=self.vs_cfg.embedding,
                 retrieval_mode=self.vs_cfg.retrieval_mode,
-                sparse_embedding=self.vs_cfg.sparse_embedding
+                sparse_embedding=self.vs_cfg.sparse_embedding,
+                vector_name=self.vs_cfg.vector_name,
+                sparse_vector_name= self.vs_cfg.sparse_vector_name,
             )
         return self._vs
 

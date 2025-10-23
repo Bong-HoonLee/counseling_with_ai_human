@@ -15,7 +15,7 @@ class Qdrant:
             self,
             client_cfg: QdrantClintConfig,
             vs_cfg: QdrantVsConfig,
-            schema: QdrantSchema
+            schema: QdrantSchema = None
             ):
         self.client_cfg = client_cfg
         self.vs_cfg = vs_cfg
@@ -48,12 +48,17 @@ class Qdrant:
                 collection_name=self.vs_cfg.collection_name,
                 embedding=self.vs_cfg.embedding,
                 retrieval_mode=self.vs_cfg.retrieval_mode,
-                sparse_embedding=self.vs_cfg.sparse_embedding
+                sparse_embedding=self.vs_cfg.sparse_embedding,
+                vector_name=self.vs_cfg.vector_name,
+                sparse_vector_name= self.vs_cfg.sparse_vector_name,
             )
         return self._vs
     
 
     def upsert(self, points: Iterable[PointUpsert]) -> None:
+        '''
+        시그니처 등록하지 않음
+        '''
         vector_store = self._ensure_vs()
         documents = []
         ids = []
@@ -68,16 +73,24 @@ class Qdrant:
         
         vector_store.add_documents(documents=documents, ids=ids)
     
-    def create_index(self):
+    def create_index(self) -> None:
+        '''
+        qdrant collection 생성 메서드
+        시그니처 등록하지 않음
+        '''
         client = self._ensure_client()
         schema = self.schema
         collection_name = schema.collection_name
         vectors_config = schema.vectors_config
+        sparse_vectors_config = schema.sparse_vectors_config
 
         if client.collection_exists(collection_name):
             client.delete_collection(collection_name)
 
         client.create_collection(
             collection_name=collection_name,
-            vectors_config=vectors_config
+            vectors_config=vectors_config,
+            sparse_vectors_config = sparse_vectors_config
         )
+
+    

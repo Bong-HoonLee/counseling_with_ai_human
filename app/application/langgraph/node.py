@@ -7,7 +7,6 @@ from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser, PydanticOutputParser
-from langchain.docstore import InMemoryDocstore
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
