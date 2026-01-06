@@ -1,10 +1,14 @@
-from pydantic import BaseModel
-from typing import Optional
+from typing import Literal, Optional, Dict, List, Any, Tuple
+from dataclasses import dataclass, field
 
-# 요청 바디 모델 정의
-class ChatRequest(BaseModel):
-    message: str
+@dataclass
+class ChatRES:
+    chatbotmessage: str
+    input_token: Optional[int] = None
+    ouput_token: Optional[int] = None
+    total_token: Optional[int] = None
+    reasoning_token: Optional[int] = None
 
-# 응답 모델 정의 (선택사항)
-class ChatResponse(BaseModel):
-    reply: dict
+    retriever_used: bool = False
+    retriever_calls: int = 0
+    retrieved_docs: list[dict[str, Any]] | None = None

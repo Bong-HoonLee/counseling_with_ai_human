@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 
 ResponseT = TypeVar("ResponseT")
 
-@dataclass(frozen=True)
+@dataclass
 class AgentSpec:
-    name: str | None = None
     model: str | BaseChatModel
+    name: str | None = None
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None
     system_prompt: str | None = None
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = ()

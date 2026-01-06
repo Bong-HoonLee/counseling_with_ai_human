@@ -15,11 +15,9 @@ class Qdrant:
             self,
             client_cfg: QdrantClintConfig,
             vs_cfg: QdrantVsConfig,
-            schema: QdrantSchema = None
             ):
         self.client_cfg = client_cfg
         self.vs_cfg = vs_cfg
-        self.schema = schema
         self._client: Optional[QdrantClient] = None
         self._vs: Optional[QdrantVectorStore] = None
 
@@ -57,7 +55,7 @@ class Qdrant:
 
     def upsert(self, points: Iterable[PointUpsert]) -> None:
         '''
-        시그니처 등록하지 않음
+        collection에 업서트하는 메서드
         '''
         vector_store = self._ensure_vs()
         documents = []
@@ -73,13 +71,11 @@ class Qdrant:
         
         vector_store.add_documents(documents=documents, ids=ids)
     
-    def create_index(self) -> None:
+    def create_index(self, schema: QdrantSchema = None) -> None:
         '''
         qdrant collection 생성 메서드
-        시그니처 등록하지 않음
         '''
         client = self._ensure_client()
-        schema = self.schema
         collection_name = schema.collection_name
         vectors_config = schema.vectors_config
         sparse_vectors_config = schema.sparse_vectors_config

@@ -10,7 +10,6 @@ from .client import MakeQdrantClient
 from app.core.models import PointUpsert, SearchQuery
 from app.config.config import QdrantClintConfig, QdrantVsConfig
 
-
 class Qdrant:
     def __init__(
             self,

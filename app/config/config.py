@@ -84,7 +84,7 @@ class OpenAIConfig:
     def from_env(cls) -> "OpenAIConfig":
         return cls(
             provider = "openai",
-            api_key=os.environ["OPENAI_API_KEY"],   
+            api_key=os.getenv("OPENAI_API_KEY"),
             model=os.getenv("OPENAI_LLM_MODEL", "gpt-4o")
         )
 

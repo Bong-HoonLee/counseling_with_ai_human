@@ -14,9 +14,8 @@ def main(
     qdrant_inst = Qdrant(
         client_cfg=client_cfg,
         vs_cfg=vs_cfg,
-        schema=schema
     )
-    qdrant_inst.create_index()
+    qdrant_inst.create_index(schema=schema)
 
     return None
 

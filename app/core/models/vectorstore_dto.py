@@ -19,7 +19,6 @@ class PointUpsert:
     payload must contains content
     '''
 
-
 @dataclass
 class SearchQuery:
     query: Optional[str] = None
