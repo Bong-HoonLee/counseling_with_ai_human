@@ -1,4 +1,4 @@
-from app.core.models.vectorstore_dto import SearchQuery
+from app.common.models.vectorstore_dto import SearchQuery
 from app.adapters.vectorstore.qdrant.langchain_qdrant import Qdrant
 from app.config import QdrantClintConfig, QdrantVsConfig
 

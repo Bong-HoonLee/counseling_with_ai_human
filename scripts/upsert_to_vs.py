@@ -2,7 +2,7 @@ import pandas as pd
 
 from app.adapters.vectorstore.qdrant.collection import Qdrant
 from app.config import QdrantClintConfig, QdrantVsConfig
-from app.core.models.vectorstore_dto import PointUpsert
+from app.common.models.vectorstore_dto import PointUpsert
 
 def main(qdrant_vs: Qdrant, data_path: str):
     data_og_df = pd.read_csv(data_path)
