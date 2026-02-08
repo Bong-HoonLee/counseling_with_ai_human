@@ -15,7 +15,7 @@ from langgraph.typing import ContextT
 from typing_extensions import TypeVar
 
 from .model.agent_spec import AgentSpec
-from app.domain.models.chat_dto import ChatRES
+from app.domain.models import ChatRES, AgentSearchQuery
         
 ResponseT = TypeVar("ResponseT")
 
@@ -140,7 +140,9 @@ class AgentAdapter:
             retrieved_docs=retrieved_docs,
         )
 
-    def generate(self, query:str):
+    def generate(self, query_payload: AgentSearchQuery) -> ChatRES:
+        query = query_payload.query
+        
         agent = self._build_agent()
         config = {"configurable": {"thread_id": "1"}}
         payload = {"messages": [{"role": "user", "content": query}]}

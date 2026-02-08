@@ -12,3 +12,7 @@ class ChatRES:
     retriever_used: bool = False
     retriever_calls: int = 0
     retrieved_docs: list[dict[str, Any]] | None = None
+    
+@dataclass
+class AgentSearchQuery:
+    query: Optional[str] = None

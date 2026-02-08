@@ -1,6 +1,6 @@
 from typing import Iterable, List, Protocol
 
-from app.domain.models import ChatRES, SearchQuery
+from app.domain.models import ChatRES, AgentSearchQuery
 
 class ChatbotAgentPort(Protocol):
-    def generate(self, query: SearchQuery) -> ChatRES: ...
+    def generate(self, query: AgentSearchQuery) -> ChatRES: ...

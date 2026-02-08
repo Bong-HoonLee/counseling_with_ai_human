@@ -6,9 +6,8 @@ from langchain_qdrant import QdrantVectorStore, FastEmbedSparse
 from langchain_core.documents import Document
 
 from .client import MakeQdrantClient
-
-from app.domain.models import PointUpsert, SearchQuery
 from .settings import QdrantClintConfig, QdrantVsConfig
+from app.domain.models import PointUpsert, SearchQuery
 
 class Qdrant:
     def __init__(

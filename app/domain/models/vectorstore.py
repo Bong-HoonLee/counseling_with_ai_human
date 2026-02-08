@@ -15,7 +15,7 @@ class PointUpsert:
     # dense: Dict[str, List[float]]           # {"q_vec": [...], "a_vec": [...]}
     # sparse: Optional[Tuple[List[int], List[float]]] = None
     payload: Optional[Dict[str, Any]] = None
-
+    
 @dataclass
 class SearchQuery:
     query: Optional[str] = None
